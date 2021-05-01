@@ -1,7 +1,14 @@
+const Post = require('../models/posts');
+
 module.exports = class API {
     // fetch all posts
     static async fetchAllPost(req, res){
-        res.send('Hello From API');
+        try{
+           const posts = await Post.find();
+           res.status(200).json(posts);
+        }catch(error){
+           res.status(404).json({message: error.message})
+        }
     }
 
     // fetch post by ID
@@ -11,7 +18,15 @@ module.exports = class API {
 
     // create a post
     static async createPost(req, res){
-        res.send('create Post');
+        const post = req.body;
+        const imagename = req.file.filename;
+        post.image = imagename;
+        try {
+            await Post.create(post);
+            res.status(201).json({message: 'Post created successfully!'});
+        } catch (error) {
+            res.status(400).json({message: error.message});
+        }
     }
 
     // update a post
