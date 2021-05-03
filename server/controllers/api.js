@@ -1,4 +1,5 @@
 const Post = require('../models/posts');
+const fs = require('fs');
 
 module.exports = class API {
     // fetch all posts
@@ -13,7 +14,13 @@ module.exports = class API {
 
     // fetch post by ID
     static async fetchPostByID(req, res){
-        res.send('Fetch Post By ID');
+        const id = req.params.id;
+        try {
+            const post = await Post.findById(id);
+            res.status(200).json(post);
+        } catch (error) {
+            res.status(404).json({message: error.message})
+        }
     }
 
     // create a post
@@ -30,12 +37,45 @@ module.exports = class API {
     }
 
     // update a post
-     static async updatePost(req, res){
-        res.send('update post');
+    static async updatePost(req, res){
+       const id = req.params.id;
+       let new_image = '';
+       if(req.file){
+           new_image = req.file.filename;
+           try {
+               fs.unlinkSync('./uploads' + req.body.old_image);
+           } catch (error) {
+               console.log(err);
+           }
+       }else{
+           new_image = req.body.old_image; 
+       }
+       const newPost = req.body;
+       newPost.image = new_image;
+
+       try {
+          await Post.findByIdAndUpdate(id,newPost);
+          req.status(200).json({message: 'Post updated successfully'});
+       } catch (error) {
+          req.status(404).json({message: error.message});
+       }
     }
 
     // delete a post
     static async deletePost(req, res){
-        res.send('delete post');
+        const id = req.params.id;
+        try {
+            const result = await Post.findByIdAndDelete(id);
+            if(result.image != ''){
+                try {
+                    fs.unlinkSync('./uploads/'+result.image);
+                } catch (error) {
+                    console.log(err);
+                }
+            }
+            res.status(200).json({message : 'Post deleted successfully!'});
+        } catch (error) {
+            req.status(404).json({message: error.message});
+        }
     }
 }
